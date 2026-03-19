@@ -1,263 +1,253 @@
 # Варианты настройки OpenClaw
 
-[OpenClaw](https://github.com/pjasicek/OpenClaw) — это open-source переосмысление платформера *Captain Claw* (1997) на C++/SDL2. Все настройки управляются через файл `config.xml` и встроенную консоль разработчика.
+[OpenClaw](https://openclaw.ai/) — бесплатный open-source персональный ИИ-ассистент, который работает локально на вашем устройстве и подключает LLM (Claude, GPT, Gemini и другие) к вашему компьютеру, файлам, браузеру и внешним сервисам. Управление происходит через мессенджеры, которые вы уже используете.
 
 ---
 
-## Расположение файла конфигурации
+## Установка
 
-Движок ищет `config.xml` в следующем порядке:
-
-| Платформа | Путь |
+| Способ | Команда |
 |---|---|
-| Linux | `~/.config/openclaw/config.xml` |
-| Windows | та же папка, что и исполняемый файл |
-| Android | `/sdcard/claw/config.xml` |
-
-Если `config.xml` не найден, при первом запуске он создаётся автоматически со значениями по умолчанию.
-
----
-
-## Структура config.xml
-
-Файл имеет корневой элемент `<Configuration>` со следующими секциями:
+| npm (глобальная установка) | `npm i -g openclaw` |
+| Bash-скрипт | `curl -fsSL https://openclaw.ai/install.sh \| bash` |
+| Из исходников (для разработки) | `git clone` + сборка |
+| macOS приложение (меню-бар) | Скачать Beta-версию с сайта |
+| Docker / Kubernetes / облако | Azure, GCP, AWS |
+| Nix / Podman | Поддерживается |
 
 ---
 
-### `<Display>` — Настройки дисплея
+## Первоначальная настройка
 
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<Size width="..." height="..."/>` | 1280 × 960 | Разрешение окна/рендеринга в пикселях |
-| `<Scale>` | 1 | Множитель масштаба рендеринга (например, 2 — масштаб 2x) |
-| `<UseVerticalSync>` | false | Включить/выключить вертикальную синхронизацию (VSync). Предотвращает разрывы кадров, может добавить задержку ввода |
-| `<IsFullscreen>` | false | Полноэкранный режим |
-| `<IsFullscreenDesktop>` | false | Безрамочный оконный полноэкранный режим («рабочий стол в полный экран») |
-
-**Пример:**
-```xml
-<Display>
-    <Size width="1920" height="1080"/>
-    <Scale>1</Scale>
-    <UseVerticalSync>true</UseVerticalSync>
-    <IsFullscreen>false</IsFullscreen>
-    <IsFullscreenDesktop>true</IsFullscreenDesktop>
-</Display>
+```bash
+openclaw onboard                       # Интерактивный мастер настройки
+openclaw onboard --install-daemon      # Установить как системный сервис
+openclaw configure                     # Перенастроить после установки
+openclaw configure --section web       # Настроить веб-поиск
+openclaw dashboard                     # Открыть панель управления в браузере
+openclaw doctor                        # Проверить и исправить конфигурацию
 ```
 
 ---
 
-### `<Audio>` — Настройки звука
+## Файл конфигурации (`openclaw.json`)
 
-| XML-элемент | По умолчанию | Описание |
+По умолчанию расположен в `~/.openclaw/openclaw.json`. Формат: JSON/JSON5.
+
+### Переопределение через переменные окружения
+
+| Переменная | Описание | По умолчанию |
 |---|---|---|
-| `<Frequency>` | 44100 | Частота дискретизации звука в Гц |
-| `<SoundChannels>` | 2 | Количество каналов вывода (1 = моно, 2 = стерео) |
-| `<MixingChannels>` | 64 | Количество одновременно воспроизводимых звуков (SDL_mixer каналы) |
-| `<ChunkSize>` | 2048 | Размер звукового буфера в сэмплах. Больше = меньше треска, но больше задержка |
-| `<SoundVolume>` | 10 | Громкость звуковых эффектов (0–100) |
-| `<MusicVolume>` | 1 | Громкость музыки (0–100) |
-| `<SoundOn>` | true | Включить/выключить все звуковые эффекты |
-| `<MusicOn>` | true | Включить/выключить музыку |
-| `<MusicRpcServerPath>` | MidiProc.exe | Путь к вспомогательному процессу MIDI (только Windows) |
+| `OPENCLAW_HOME` | Переопределить домашнюю директорию | — |
+| `OPENCLAW_STATE_DIR` | Переопределить директорию состояния | `~/.openclaw` |
+| `OPENCLAW_CONFIG_PATH` | Переопределить путь к файлу конфигурации | `~/.openclaw/openclaw.json` |
+| `OPENCLAW_LOAD_SHELL_ENV` | Импортировать переменные из login-оболочки (значение `1`) | отключено |
+| `OPENCLAW_SHELL_ENV_TIMEOUT_MS` | Таймаут импорта переменных оболочки (мс) | `15000` |
+| `OPENCLAW_THEME` | Принудительно задать цветовую схему UI | auto |
+| `OPENCLAW_LOG_LEVEL` | Уровень логирования (`debug`, `trace` и др.) | — |
+| `OPENROUTER_API_KEY` | API-ключ для OpenRouter | — |
+| `GROQ_API_KEY` | API-ключ для Groq | — |
+| `VERCEL_GATEWAY_API_KEY` | API-ключ для Vercel Gateway | — |
 
-**Пример:**
-```xml
-<Audio>
-    <Frequency>44100</Frequency>
-    <SoundChannels>2</SoundChannels>
-    <MixingChannels>64</MixingChannels>
-    <ChunkSize>2048</ChunkSize>
-    <SoundVolume>50</SoundVolume>
-    <MusicVolume>30</MusicVolume>
-    <SoundOn>true</SoundOn>
-    <MusicOn>true</MusicOn>
-</Audio>
+### Блок `env` (встроенные ключи и переменные)
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-ant-...",
+    "OPENAI_API_KEY": "sk-...",
+    "MY_VAR": "${ENV_VAR_FROM_SYSTEM}",
+    "shellEnv": {
+      "enabled": true,
+      "timeoutMs": 15000
+    }
+  }
+}
 ```
 
-> **Примечание для Linux:** для воспроизведения MIDI-музыки необходимо установить `timidity` (или `timidity++`) и `freepats`.
+### Блок `models.providers` (провайдеры ИИ-моделей)
 
----
+OpenClaw поддерживает 40+ провайдеров. Примеры настройки API-ключей:
 
-### `<Assets>` — Ресурсы и файлы
-
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<AssetsFolder>` | *(пусто)* | Дополнительный путь к папке с ресурсами |
-| `<RezArchive>` | CLAW.REZ | Имя архива с ресурсами оригинальной игры (обязательно) |
-| `<CustomArchive>` | ASSETS.ZIP | Архив с дополнительными ресурсами OpenClaw |
-| `<ResourceCacheSize>` | 150 | Максимальный объём памяти (МБ) для кэша ресурсов |
-| `<TempDir>` | *(пусто)* | Временная директория |
-| `<SavesFile>` | SAVES.XML | Имя файла сохранений |
-
-**Пример:**
-```xml
-<Assets>
-    <RezArchive>CLAW.REZ</RezArchive>
-    <CustomArchive>ASSETS.ZIP</CustomArchive>
-    <ResourceCacheSize>200</ResourceCacheSize>
-    <SavesFile>SAVES.XML</SavesFile>
-</Assets>
+```json
+{
+  "models": {
+    "providers": {
+      "anthropic": { "apiKey": "sk-ant-..." },
+      "openai":    { "apiKey": "sk-..." },
+      "google":    { "apiKey": "AIza..." },
+      "ollama":    { "baseUrl": "http://localhost:11434" }
+    }
+  }
+}
 ```
 
----
+**Поддерживаемые провайдеры:** Anthropic Claude, OpenAI (GPT-4/5, o1), Google Gemini, xAI Grok, Mistral, DeepSeek, MiniMax, GLM, Perplexity, OpenRouter, Vercel AI Gateway, Groq, Hugging Face, Ollama (локально), LM Studio (локально), а также специализированные провайдеры.
 
-### `<GlobalOptions>` — Игровой баланс и физика
+### Блок `tools` (инструменты)
 
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<MaxJumpSpeed>` | 8.8 | Максимальная скорость прыжка вверх |
-| `<MaxFallSpeed>` | 14.0 | Максимальная скорость падения |
-| `<ClawRunningSpeed>` | 4.5 | Горизонтальная скорость бега Клоу |
-| `<MaxJumpHeight>` | 155 | Максимальная высота прыжка в пикселях |
-| `<PowerupMaxJumpHeight>` | 205 | Высота прыжка при активном усилении |
-| `<SpringBoardSpringSpeed>` | 11 | Скорость запуска с батута |
-| `<ClawMinFallHeight>` | 500 | Минимальная высота падения (пикс.) до урона от падения |
-| `<IdleSoundQuoteInterval>` | 15000 | Интервал (мс) между звуковыми цитатами в режиме ожидания |
-| `<PlatformSpeedModifier>` | 0.015 | Множитель скорости движущихся платформ |
-| `<StartLookUpOrDownTime>` | 1500 | Задержка (мс) перед прокруткой камеры вверх/вниз |
-| `<FreezeTime>` | 2000 | Длительность (мс) эффекта заморозки |
-| `<MaxLookUpOrDownDistance>` | 250 | Максимальное смещение камеры при взгляде вверх/вниз (пикс.) |
-| `<LookUpOrDownSpeed>` | 250 | Скорость прокрутки камеры (пикс./сек) |
-| `<ShowFps>` | false | Показывать счётчик кадров в секунду (FPS) |
-| `<ShowPosition>` | false | Показывать текущую позицию Клоу |
-| `<LoadAllLevelSaves>` | false | Загружать сохранения для всех уровней при старте |
-
-**Пример (изменение скорости и отображения FPS):**
-```xml
-<GlobalOptions>
-    <ClawRunningSpeed>5.0</ClawRunningSpeed>
-    <MaxJumpSpeed>9.0</MaxJumpSpeed>
-    <ShowFps>true</ShowFps>
-</GlobalOptions>
+```json
+{
+  "tools": {
+    "profile": "coding"
+  }
+}
 ```
 
----
-
-### `<ControlOptions>` — Управление
-
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<UseAlternateControls>` | false | Использовать альтернативную раскладку управления |
-| `<TouchScreen><Enable>` | true | Включить обработку сенсорного ввода |
-| `<TouchScreen><DistanceThreshold>` | 0.05 | Порог смещения касания (доля экрана) для разделения тапов и свайпов |
-| `<TouchScreen><TimeThreshold>` | 100 | Временной порог (мс) для разделения коротких и длинных касаний |
-
-> **Контроллеры:** для настройки геймпада можно задать переменную окружения `SDL_GAMECONTROLLERCONFIG`.
-
----
-
-### `<DebugOptions>` — Отладка
-
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<SkipMenu>` | false | Пропустить главное меню при запуске (перейти сразу к уровню) |
-| `<SkipMenuToLevel>` | 13 | Номер уровня для перехода при `SkipMenu=true` |
-| `<LastImplementedLevel>` | 13 | Максимально доступный уровень в меню |
-| `<SkipBossFightIntro>` | false | Пропускать заставки перед боссами |
-| `<CpuDelay>` | 0 | Искусственная задержка (мс) на каждый кадр (для тестирования) |
-
-**Пример (быстрый запуск для разработки):**
-```xml
-<DebugOptions>
-    <SkipMenu>true</SkipMenu>
-    <SkipMenuToLevel>1</SkipMenuToLevel>
-    <SkipBossFightIntro>true</SkipBossFightIntro>
-</DebugOptions>
-```
-
----
-
-### `<Console>` — Встроенная консоль разработчика
-
-Консоль открывается клавишей `~` (тильда).
-
-| XML-элемент | По умолчанию | Описание |
-|---|---|---|
-| `<BackgroundImagePath>` | console02.tga | Путь к фоновому изображению консоли |
-| `<StretchBackgroundImage>` | true | Растягивать фон по размеру консоли |
-| `<WidthRatio>` | 1.0 | Ширина консоли как доля от ширины окна (0.0–1.0) |
-| `<HeightRatio>` | 0.5 | Высота консоли как доля от высоты окна (0.0–1.0) |
-| `<ConsoleAnimationSpeed>` | 0.7 | Скорость анимации выезда консоли |
-| `<FontPath>` | clacon.ttf | Файл шрифта для текста консоли |
-| `<FontColor r="..." g="..." b="..."/>` | 255,255,255 | Цвет текста консоли (RGB) |
-| `<FontHeight>` | 20 | Размер шрифта в консоли |
-| `<LeftOffset>` | 5 | Горизонтальный отступ от левого края (пикс.) |
-| `<CommandPrompt>` | `> ` | Строка приглашения перед вводом команды |
-
----
-
-## Команды встроенной консоли
-
-Консоль открывается клавишей `~`. Команды нечувствительны к регистру.
-
-### Чит-коды и игровые команды
-
-| Команда | Описание |
+| Значение `profile` | Описание |
 |---|---|
-| `InfiniteAmmo on/off` | Бесконечные боеприпасы |
-| `Invincible on/off` | Неуязвимость |
-| `InfiniteJump on/off` | Бесконечные прыжки |
-| `PhysicsDebug on/off` | Отображение физических коллайдеров |
-| `catnip` | Применить усиление Catnip на 30 секунд |
-| `firesword` | Применить усиление Fire Sword на 30 секунд |
-| `frostsword` | Применить усиление Frost Sword на 30 секунд |
-| `lightningsword` | Применить усиление Lightning Sword на 30 секунд |
-| `invisible` / `invisibility` / `invis` | Невидимость на 30 секунд |
-| `invulnerable` / `invlr` | Неуязвимость на 30 секунд |
-| `spawn coin` | Заспавнить монету рядом с Клоу |
-| `spawn skull` | Заспавнить череп рядом с Клоу |
-| `teleport <x> <y>` | Телепортировать Клоу в координаты x, y |
+| `coding` | Профиль для разработки (расширенный набор инструментов) |
+| `default` | Стандартный набор инструментов |
 
-### Системные и отладочные команды
+### Блок `session` (сессии)
 
-| Команда | Описание |
+```json
+{
+  "session": {
+    "dmScope": "per-channel-peer"
+  }
+}
+```
+
+| Значение `dmScope` | Описание |
 |---|---|
-| `reset level` / `rl` | Перезапустить текущий уровень |
-| `menu` | Вернуться в главное меню |
-| `cpudelay <мс>` | Установить искусственную задержку кадра в мс |
-| `winresize <ширина> <высота> <масштаб>` | Изменить размер окна |
-| `reload levelmetadata` | Горячая перезагрузка метаданных уровня |
-| `reload actorprototypes` / `reload actorproto` | Горячая перезагрузка прототипов актёров |
-| `reload all` / `ra` | Полная горячая перезагрузка всех данных |
+| `per-channel-peer` | Изолировать личные сообщения по каналу и пользователю |
+| `global` | Общая сессия для всех |
 
-> **Подсказка:** строки, начинающиеся с `#`, воспринимаются как комментарии и игнорируются.
+### Блок `cron` (автоматические задачи)
 
----
-
-## Файл стартовых команд (startup_commands.txt)
-
-Файл `startup_commands.txt` в папке с исполняемым файлом читается при каждом запуске. Каждая строка выполняется как команда консоли. Это позволяет автоматизировать настройки без изменения `config.xml`.
-
-**Пример `startup_commands.txt`:**
-```
-# Включить показ FPS
-# (используйте консольные команды, применимые при старте)
-InfiniteAmmo on
+```json
+{
+  "cron": {
+    "webhookToken": "your-secret-token"
+  }
+}
 ```
 
 ---
 
-## Сводная таблица — что менять в первую очередь
+## Настройка каналов (мессенджеров)
 
-| Задача | Что изменить | Где |
+### Встроенные каналы
+
+| Канал | Конфигурация |
+|---|---|
+| **WhatsApp** | `~/.openclaw/credentials/whatsapp/` (JSON аккаунта + QR-спаривание) |
+| **Telegram** | Токен через конфиг/env или `channels.telegram.tokenFile` |
+| **Discord** | Токен через конфиг/env или SecretRef-провайдеры |
+| **Slack** | Блок `channels.slack.*` в конфиге |
+| **Signal** | Встроенная поддержка |
+| **iMessage** | Через BlueBubbles |
+| **Google Chat** | Встроенная поддержка |
+| **IRC** | Встроенная поддержка |
+| **WebChat** | Браузерный UI (встроен) |
+
+### Плагины каналов (устанавливаются отдельно)
+
+Microsoft Teams, Matrix, Mattermost, LINE, Feishu, Nostr, Nextcloud Talk, Twitch, Zalo и другие.
+
+### Список доступа (allowlist)
+
+Управляется через JSON-файлы для каждого канала. Настраивается в Dashboard.
+
+---
+
+## Настройка шлюза (Gateway)
+
+| Параметр | По умолчанию | Описание |
 |---|---|---|
-| Изменить разрешение | `<Size width="..." height="..."/>` | `<Display>` |
-| Полноэкранный режим | `<IsFullscreen>true</IsFullscreen>` | `<Display>` |
-| Убрать разрывы кадров | `<UseVerticalSync>true</UseVerticalSync>` | `<Display>` |
-| Изменить громкость | `<SoundVolume>`, `<MusicVolume>` | `<Audio>` |
-| Выключить музыку | `<MusicOn>false</MusicOn>` | `<Audio>` |
-| Ускорить Клоу | `<ClawRunningSpeed>` | `<GlobalOptions>` |
-| Показать FPS | `<ShowFps>true</ShowFps>` | `<GlobalOptions>` |
-| Пропустить меню при тестировании | `<SkipMenu>true</SkipMenu>` | `<DebugOptions>` |
-| Бесконечные прыжки (тест) | `InfiniteJump on` в консоли | Консоль (~) |
-| Кастомный архив игры | `<RezArchive>` | `<Assets>` |
+| Порт WebSocket | `18789` | Изменяется в конфигурации |
+| Bind-адрес | configurable | Адрес прослушивания |
+| Режим аутентификации | Token / Password | Выбирается при настройке |
+| Tailscale | отключено | Включить для доступа через Tailscale-сеть |
+
+---
+
+## Настройка веб-поиска
+
+```bash
+openclaw configure --section web
+```
+
+Доступные провайдеры поиска: Perplexity, Brave, Gemini, Grok, Kimi.
+
+---
+
+## Управление агентами и навыками
+
+```bash
+openclaw agents add <name>    # Добавить дополнительного агента
+```
+
+| Путь | Описание |
+|---|---|
+| `~/.openclaw/workspace/` | Директория навыков, промптов и памяти |
+| `~/.openclaw/agents/<agentId>/` | Директория конкретного агента |
+| `~/.openclaw/agents/<agentId>/agent/auth-profiles.json` | Профили аутентификации агента |
+| `~/.openclaw/secrets.json` | Хранилище секретов (опционально) |
+
+- Навыки можно создавать прямо в чате.
+- Изменения в промптах применяются без перезапуска (hot-reload).
+- Маркетплейс сообщества: [clawhub.ai](https://clawhub.ai).
+
+---
+
+## Панель управления (Dashboard)
+
+Запускается командой `openclaw dashboard` или через macOS-приложение.
+
+| Раздел | Что настраивается |
+|---|---|
+| **Язык** | `en`, `zh-CN`, `zh-TW`, `pt-BR`, `de`, `es` |
+| **Сессии** | Список и управление активными сессиями; переопределение модели, режима мышления, verbose |
+| **Каналы** | Мониторинг и конфигурация WhatsApp, Telegram, Discord, Slack; QR-вход для плагинов |
+| **Cron-задачи** | Создание/редактирование/запуск/включение; режимы доставки (summary, webhook, none); модель и мышление для каждой задачи |
+| **Навыки** | Включение/отключение, установка новых, обновление API-ключей |
+| **Системная конфигурация** | Просмотр и редактирование `openclaw.json` в браузере с валидацией |
+| **Расширенные** | Разрешения exec, allowlist, лог шлюза в реальном времени, ручные RPC-вызовы |
+
+---
+
+## CLI — полезные флаги
+
+| Флаг / Команда | Описание |
+|---|---|
+| `--non-interactive` | Режим автоматизации / скриптов |
+| `--json` | Вывод в формате JSON |
+| `--reset` | Сбросить конфиг, учётные данные и сессии |
+| `--reset-scope full` | Включить workspace в сброс |
+| `--workspace <путь>` | Указать кастомную директорию workspace |
+| `--model <модель>` | Указать модель по умолчанию |
+| `--agent-dir <путь>` | Кастомная директория агентов |
+| `--bind` | Настройка маршрутизации сообщений |
+| `--gateway-token-ref-env <ENV>` | Ссылка на токен для неинтерактивной настройки |
+| `--secret-input-mode ref` | Учётные данные через переменные окружения |
+
+---
+
+## Поддерживаемые интеграции
+
+| Категория | Сервисы |
+|---|---|
+| Продуктивность | Apple Notes, Apple Reminders, Things 3, Notion, Obsidian, Bear Notes, Trello, GitHub |
+| Музыка | Spotify, Sonos, Shazam |
+| Умный дом | Philips Hue, 8Sleep, Home Assistant |
+| Автоматизация | Управление браузером, cron-задачи, вебхуки, Gmail (+ PubSub), 1Password |
+| Социальные | Twitter/X, Email |
+| Медиа / Творчество | Генерация изображений, поиск GIF, захват экрана (Peekaboo), камера |
+
+---
+
+## Поддерживаемые платформы
+
+macOS, Windows (рекомендуется WSL2), Linux, Raspberry Pi, iOS, Android.
+
+Развёртывание на сервере: Docker, Kubernetes, Azure, GCP, AWS, systemd user service.
 
 ---
 
 ## Ссылки
 
-- [Репозиторий OpenClaw на GitHub](https://github.com/pjasicek/OpenClaw)
-- [Исходный config.xml по умолчанию](https://github.com/pjasicek/OpenClaw/blob/master/Build_Release/config.xml)
-- [Исходный код обработки команд консоли](https://github.com/pjasicek/OpenClaw/blob/master/OpenClaw/Engine/GameApp/CommandHandler.cpp)
-- [Исходный код структур конфигурации](https://github.com/pjasicek/OpenClaw/blob/master/OpenClaw/Engine/GameApp/BaseGameApp.h)
+- [Официальный сайт OpenClaw](https://openclaw.ai/)
+- [Документация](https://docs.openclaw.ai/getting-started)
+- [Маркетплейс навыков — ClaWHub](https://clawhub.ai)
